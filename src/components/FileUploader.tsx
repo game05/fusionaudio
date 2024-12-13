@@ -3,6 +3,7 @@
 import { useCallback, useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { initFFmpeg, mergeAudioFiles, downloadBlob } from '@/lib/audioService';
+import { saveAudio } from '@/lib/audioStorage';
 import ProgressBar from './ProgressBar';
 
 export default function FileUploader() {
@@ -44,7 +45,6 @@ export default function FileUploader() {
     setStatus('Préparation des fichiers...');
     
     try {
-      // Simuler la progression pour le chargement des fichiers
       setProgress(10);
       await new Promise(resolve => setTimeout(resolve, 500));
       
@@ -53,7 +53,6 @@ export default function FileUploader() {
       await new Promise(resolve => setTimeout(resolve, 500));
 
       setStatus('Fusion des fichiers en cours...');
-      // Simuler la progression pendant la fusion
       for (let i = 30; i <= 80; i += 10) {
         setProgress(i);
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -62,12 +61,13 @@ export default function FileUploader() {
       const mergedBlob = await mergeAudioFiles(files);
       setProgress(90);
       
-      setStatus('Finalisation...');
-      await new Promise(resolve => setTimeout(resolve, 500));
+      setStatus('Sauvegarde...');
+      const fileName = 'merged_audio.mp3';
+      saveAudio(mergedBlob, fileName);
       
       setStatus('Téléchargement du fichier...');
       setProgress(100);
-      downloadBlob(mergedBlob, 'merged_audio.mp3');
+      downloadBlob(mergedBlob, fileName);
       
       setStatus('Fusion terminée !');
     } catch (error) {
