@@ -1,13 +1,26 @@
 import { AudioMetadata } from '@/app/api/audios/route';
+import { put } from '@vercel/blob';
 
 export async function uploadAudio(blob: Blob, fileName: string): Promise<AudioMetadata> {
-  const formData = new FormData();
-  formData.append('audio', blob, fileName);
-  formData.append('name', fileName);
+  // Upload direct vers Vercel Blob
+  const { url } = await put(fileName, blob, {
+    access: 'public',
+  });
+
+  // Enregistrer les métadonnées via l'API
+  const metadata = {
+    name: fileName,
+    url: url,
+    size: blob.size,
+    date: new Date().toISOString(),
+  };
 
   const response = await fetch('/api/audios', {
     method: 'POST',
-    body: formData,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(metadata),
   });
 
   if (!response.ok) {
