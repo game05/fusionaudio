@@ -1,3 +1,6 @@
+// Ce fichier n'est plus nécessaire car nous utilisons directement @vercel/blob
+// Vous pouvez le supprimer
+
 import { put, del, list } from '@vercel/blob';
 import { AudioMetadata } from '@/app/api/audios/route';
 
