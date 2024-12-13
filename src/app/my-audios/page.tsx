@@ -1,36 +1,78 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { SavedAudio, getSavedAudios, deleteAudio, formatFileSize } from '@/lib/audioStorage';
+import { AudioMetadata } from '@/app/api/audios/route';
+import { getAudios, deleteAudio, getAudioUrl } from '@/lib/audioApi';
+import { formatFileSize } from '@/lib/audioStorage';
 
 export default function MyAudios() {
-  const [audios, setAudios] = useState<SavedAudio[]>([]);
+  const [audios, setAudios] = useState<AudioMetadata[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setAudios(getSavedAudios());
+    loadAudios();
   }, []);
 
-  const handleDelete = (id: string) => {
-    deleteAudio(id);
-    setAudios(getSavedAudios());
+  const loadAudios = async () => {
+    try {
+      const data = await getAudios();
+      setAudios(data);
+      setError(null);
+    } catch (err) {
+      setError('Erreur lors du chargement des audios');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDownload = (audio: SavedAudio) => {
-    const a = document.createElement('a');
-    a.href = audio.url;
-    a.download = audio.name;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteAudio(id);
+      await loadAudios();
+    } catch (err) {
+      console.error('Error deleting audio:', err);
+      setError('Erreur lors de la suppression');
+    }
   };
+
+  const handleDownload = (audio: AudioMetadata) => {
+    const link = document.createElement('a');
+    link.href = getAudioUrl(audio.id);
+    link.download = audio.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto p-8">
+        <div className="text-center py-12">
+          <p className="text-gray-500">Chargement des audios...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-4xl mx-auto p-8">
+        <div className="text-center py-12 bg-red-50 rounded-lg">
+          <p className="text-red-500">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-8">Mes Audios</h1>
+      <h1 className="text-3xl font-bold mb-8">Audios Partagés</h1>
       
       {audios.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-lg shadow">
-          <p className="text-gray-500">Aucun audio fusionné pour le moment</p>
+          <p className="text-gray-500">Aucun audio partagé pour le moment</p>
         </div>
       ) : (
         <div className="space-y-4">

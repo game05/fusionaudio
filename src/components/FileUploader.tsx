@@ -2,8 +2,8 @@
 
 import { useCallback, useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { initFFmpeg, mergeAudioFiles, downloadBlob } from '@/lib/audioService';
-import { saveAudio } from '@/lib/audioStorage';
+import { initFFmpeg, mergeAudioFiles } from '@/lib/audioService';
+import { uploadAudio } from '@/lib/audioApi';
 import ProgressBar from './ProgressBar';
 
 export default function FileUploader() {
@@ -26,8 +26,6 @@ export default function FileUploader() {
 
     const sortedFiles = audioFiles.sort((a, b) => a.name.localeCompare(b.name));
     setFiles(sortedFiles);
-    setProgress(0);
-    setStatus('');
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -61,14 +59,11 @@ export default function FileUploader() {
       const mergedBlob = await mergeAudioFiles(files);
       setProgress(90);
       
-      setStatus('Sauvegarde...');
-      const fileName = 'merged_audio.mp3';
-      saveAudio(mergedBlob, fileName);
+      setStatus('Partage du fichier...');
+      const fileName = `fusion_${new Date().toISOString().slice(0, 10)}.mp3`;
+      await uploadAudio(mergedBlob, fileName);
       
-      setStatus('Téléchargement du fichier...');
       setProgress(100);
-      downloadBlob(mergedBlob, fileName);
-      
       setStatus('Fusion terminée !');
     } catch (error) {
       console.error('Error processing files:', error);
