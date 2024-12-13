@@ -39,7 +39,7 @@ export default function MyAudios() {
 
   const handleDownload = (audio: AudioMetadata) => {
     const link = document.createElement('a');
-    link.href = getAudioUrl(audio.id);
+    link.href = getAudioUrl(audio);
     link.download = audio.name;
     document.body.appendChild(link);
     link.click();

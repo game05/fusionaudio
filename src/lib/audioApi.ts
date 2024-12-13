@@ -36,3 +36,8 @@ export async function deleteAudio(id: string): Promise<void> {
     throw new Error('Failed to delete audio');
   }
 }
+
+// Ajout de la fonction getAudioUrl
+export function getAudioUrl(audio: AudioMetadata): string {
+  return audio.url;
+}
