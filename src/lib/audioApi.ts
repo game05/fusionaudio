@@ -36,7 +36,3 @@ export async function deleteAudio(id: string): Promise<void> {
     throw new Error('Failed to delete audio');
   }
 }
-
-export function getAudioUrl(id: string): string {
-  return `/uploads/${id}.mp3`;
-}

@@ -1,22 +1,21 @@
 import { NextResponse } from 'next/server';
-import { writeFile, readFile, unlink } from 'fs/promises';
-import path from 'path';
+import { uploadToBlob, deleteFromBlob } from '@/lib/blobStorage';
 
 export interface AudioMetadata {
   id: string;
   name: string;
   date: string;
   size: number;
+  url: string;
 }
 
-const UPLOADS_DIR = path.join(process.cwd(), 'public', 'uploads');
-const METADATA_FILE = path.join(process.cwd(), 'public', 'uploads', 'metadata.json');
+// Stockage en mémoire temporaire des métadonnées (à remplacer par une base de données plus tard)
+let audioMetadata: AudioMetadata[] = [];
 
 // GET /api/audios
 export async function GET() {
   try {
-    const metadata = await readMetadata();
-    return NextResponse.json(metadata);
+    return NextResponse.json(audioMetadata);
   } catch (error) {
     return NextResponse.json({ error: 'Failed to get audios' }, { status: 500 });
   }
@@ -37,27 +36,17 @@ export async function POST(request: Request) {
     }
 
     const id = generateId();
-    const fileExtension = path.extname(fileName);
-    const finalFileName = `${id}${fileExtension}`;
-    const filePath = path.join(UPLOADS_DIR, finalFileName);
+    const blobUrl = await uploadToBlob(audioFile, `${id}-${fileName}`);
 
-    // Convert File to Buffer
-    const bytes = await audioFile.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Save the file
-    await writeFile(filePath, buffer);
-
-    // Update metadata
-    const metadata = await readMetadata();
     const newAudio: AudioMetadata = {
       id,
       name: fileName,
       date: new Date().toISOString(),
-      size: buffer.length,
+      size: audioFile.size,
+      url: blobUrl
     };
-    metadata.push(newAudio);
-    await writeMetadata(metadata);
+
+    audioMetadata.push(newAudio);
 
     return NextResponse.json(newAudio);
   } catch (error) {
@@ -82,8 +71,7 @@ export async function DELETE(request: Request) {
       );
     }
 
-    const metadata = await readMetadata();
-    const audioToDelete = metadata.find(audio => audio.id === id);
+    const audioToDelete = audioMetadata.find(audio => audio.id === id);
 
     if (!audioToDelete) {
       return NextResponse.json(
@@ -92,13 +80,8 @@ export async function DELETE(request: Request) {
       );
     }
 
-    // Delete the file
-    const filePath = path.join(UPLOADS_DIR, `${id}.mp3`);
-    await unlink(filePath);
-
-    // Update metadata
-    const updatedMetadata = metadata.filter(audio => audio.id !== id);
-    await writeMetadata(updatedMetadata);
+    await deleteFromBlob(audioToDelete.url);
+    audioMetadata = audioMetadata.filter(audio => audio.id !== id);
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -107,19 +90,6 @@ export async function DELETE(request: Request) {
       { status: 500 }
     );
   }
-}
-
-async function readMetadata(): Promise<AudioMetadata[]> {
-  try {
-    const data = await readFile(METADATA_FILE, 'utf-8');
-    return JSON.parse(data);
-  } catch (error) {
-    return [];
-  }
-}
-
-async function writeMetadata(metadata: AudioMetadata[]): Promise<void> {
-  await writeFile(METADATA_FILE, JSON.stringify(metadata, null, 2));
 }
 
 function generateId(): string {
