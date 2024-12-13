@@ -27,11 +27,25 @@ export default function FileUploader() {
     setFiles(sortedFiles);
   }, []);
 
+  const handleFolderSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      const audioFiles = Array.from(event.target.files).filter(file => 
+        file.type.startsWith('audio/') || 
+        file.name.endsWith('.mp3') || 
+        file.name.endsWith('.m4a') || 
+        file.name.endsWith('.wav')
+      );
+
+      const sortedFiles = audioFiles.sort((a, b) => a.name.localeCompare(b.name));
+      setFiles(sortedFiles);
+    }
+  };
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     multiple: true,
-    noClick: false,
-    noKeyboard: false,
+    noClick: true,
+    noKeyboard: true
   });
 
   const handleProcessFiles = async () => {
@@ -87,19 +101,27 @@ export default function FileUploader() {
         className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
           ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400'}`}
       >
-        <input 
-          {...getInputProps()} 
+        <input {...getInputProps()} />
+        <input
+          type="file"
           // @ts-ignore
-          directory="" 
           webkitdirectory=""
+          // @ts-ignore
+          directory=""
+          onChange={handleFolderSelect}
+          className="hidden"
+          id="folder-input"
         />
         <div className="space-y-2">
           <p className="text-lg font-medium">
             {isDragActive ? 'Déposez les fichiers ici' : 'Glissez-déposez vos fichiers audio ici'}
           </p>
-          <p className="text-sm text-gray-500">
+          <label
+            htmlFor="folder-input"
+            className="inline-block px-4 py-2 bg-blue-50 text-blue-700 rounded-full cursor-pointer hover:bg-blue-100"
+          >
             ou cliquez pour sélectionner un dossier
-          </p>
+          </label>
         </div>
       </div>
 
