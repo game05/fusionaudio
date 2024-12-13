@@ -3,7 +3,6 @@
 import { useCallback, useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { initFFmpeg, mergeAudioFiles } from '@/lib/audioService';
-import { uploadAudio } from '@/lib/audioApi';
 import ProgressBar from './ProgressBar';
 
 export default function FileUploader() {
@@ -59,9 +58,16 @@ export default function FileUploader() {
       const mergedBlob = await mergeAudioFiles(files);
       setProgress(90);
       
-      setStatus('Partage du fichier...');
-      const fileName = `fusion_${new Date().toISOString().slice(0, 10)}.mp3`;
-      await uploadAudio(mergedBlob, fileName);
+      setStatus('Téléchargement du fichier...');
+      // Créer un lien de téléchargement
+      const url = URL.createObjectURL(mergedBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `fusion_${new Date().toISOString().slice(0, 10)}.mp3`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
       
       setProgress(100);
       setStatus('Fusion terminée !');
